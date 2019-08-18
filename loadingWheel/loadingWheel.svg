@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-300 -70 600 600" xmlns:xlink="http://www.w3.org/1999/xlink" begin="0">
+  <g id="loadingWheel" />
+<!-- <g transform="rotate(-10 50 100)">
+  <circle cx='10' cy='10' r='2' />
+</g> -->
+
+<!-- Note XHTML cannot use modules :( so no type="module" yet -->
+  <script >
+    // <![CDATA[
+    window.LoadingWheel = {};
+    // ]]>
+  </script>
+  <script xlink:href="./js/utils.js" namespace="LoadingWheel" />
+  <script xlink:href="./js/animations.js" namespace="LoadingWheel" />
+  <script xlink:href="./js/loadingWheel.js" />
+</svg>
+
+
+

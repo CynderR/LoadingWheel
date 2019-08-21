@@ -1,4 +1,3 @@
-
 /*
   * Loading Wheel
   Params: {
@@ -8,7 +7,8 @@
 LoadingWheel.Main = function() {
   const Utils = LoadingWheel.Utils;
   const Animations = LoadingWheel.Animations;
- 
+  const Shapes = LoadingWheel.Shapes;
+
   const getTotalSpokes = () => Number(this.params.totalSpokes);
   const getOverlap = () => Number(this.params.overlap);
 
@@ -18,8 +18,9 @@ LoadingWheel.Main = function() {
     animationName: 'FadeOneSeccond',
     hiddenSpokes: 2,
     animationDuration: 1,
-    fillColor: 'green',
     unrenderedSvg: '',
+    fillColor: 'green',
+    shape: "circle",
     spokeRotation: () => {
       return Math.floor(360 / getTotalSpokes());
     },
@@ -30,10 +31,11 @@ LoadingWheel.Main = function() {
       rotation,
       offset,
       svg,
-    }) => `<g transform="rotate(${rotation} ${offset} 200)">${svg}</g>` ,
+    }) => `<g transform="rotate(${rotation} ${offset} 200)">${svg}</g>`,
   };
 
   this.init = () => {
+    console.log(document.getElementById("test"))
     this.cacheDomObject();
     this.setParams();
     this.buildWheel();
@@ -54,22 +56,23 @@ LoadingWheel.Main = function() {
   };
 
   this.calculateSpokeDimensions = () => {
-    this.$svg.innerHTML = this.getSpoke();
-    this.getSpokeDimensions(this.$svg);
-    this.$svg.innerHTML = '';
+    let aSpoke = this.getShape();
+    this.$svg.innerHTML = aSpoke.outerHTML;
+    this.setSpokeDimensions(this.$svg);
+    this.$svg.innerHTML = "";
   };
 
-  this.getSpokeDimensions = (domObj) => {
+  this.setSpokeDimensions = (domObj) => {
     this.params.spokeDimensions = { width, height } = domObj.getBBox();
+    console.log(this.params.spokeDimensions)
   };
 
   this.buildWheel = () => {
     const spokes = getTotalSpokes() + getOverlap();
     for (let i = 0; i < spokes; i++) {
-      let aSpoke = this.getSpoke();
+      let aSpoke = this.getShape();
       let animation = this.getAnimation(i);
       aSpoke.appendChild(animation);
-
       this.params.unrenderedSvg += this.getSpokeWithRotation(i, this.params.spokeDimensions.width / 2, aSpoke);
     }
   };
@@ -80,19 +83,24 @@ LoadingWheel.Main = function() {
 
   this.getSpokeWithRotation = (spokeNumber, offset = 0, aSpoke) => {
     return this.params.svgGroup({
-      offset,
       svg: aSpoke.outerHTML,
-      rotation: -this.params.spokeRotation() * spokeNumber,
+      offset,
+      rotation: -this.params.spokeRotation() * spokeNumber
     });
   };
 
-  this.getSpoke = () => {
-    // To be cleaned
-var circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
-circle.setAttribute("r", "50");
-circle.setAttribute("fill", this.params.fillColor);
-return circle;
-    // To be cleaned
+  this.getShape = () => {
+    return Shapes[this.params.shape](this.getShapeParams());
+  };
+
+  this.getShapeParams = () => {
+    let shapeParam = {
+      fill: this.params.fillColor
+    };
+    if (this.params.transform) {
+      shapeParam.transform = this.params.transform;
+    }
+    return shapeParam;
   };
 
   this.getAnimation = (spokeNumber) => {

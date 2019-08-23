@@ -5,119 +5,115 @@
   }
 */
 LoadingWheel.Main = function() {
-  const Utils = LoadingWheel.Utils;
-  const Animations = LoadingWheel.Animations;
-  const Shapes = LoadingWheel.Shapes;
+  const Animations = LoadingWheel.Animations,
+    Utils = LoadingWheel.Utils,
+    Shapes = LoadingWheel.Shapes;
 
-  const getTotalSpokes = () => Number(this.params.totalSpokes);
-  const getOverlap = () => Number(this.params.overlap);
+  const urlParamsType = {
+    totalSpokes: Utils.stringToInt,
+    hiddenSpokes: Utils.stringToInt,
+    animationDuration: Utils.stringToInt,
+    spinClockwise: Utils.stringToBool,
+  };
 
   this.defaults = {
-    totalSpokes: 5,
-    overlap: 0,
-    animationName: 'FadeOneSeccond',
-    hiddenSpokes: 2,
     animationDuration: 1,
-    unrenderedSvg: '',
+    hiddenSpokes: 0,
+    totalSpokes: 5,
+    spokeAnimationName: 'FadeOneSeccond',
+    spinClockwise: true,
     fillColor: 'green',
     shape: "circle",
-    spokeRotation: () => {
-      return Math.floor(360 / getTotalSpokes());
-    },
-    spokeOpacity: (count) => {
-      return count / getTotalSpokes() + getOverlap();
-    },
-    svgGroup: ({
-      rotation,
-      offset,
-      svg,
-    }) => `<g transform="rotate(${rotation} ${offset} 200)">${svg}</g>`,
   };
 
   this.init = () => {
-    console.log(document.getElementById("test"))
     this.cacheDomObject();
     this.setParams();
-    this.buildWheel();
-    this.renderWheel();
+    let unrenderedSvg = this.buildWheel();
+    this.renderWheel(unrenderedSvg);
   };
 
   this.cacheDomObject = () => {
     this.$svg = document.getElementById('loadingWheel');
-    this.$svg.id = '';
   };
 
   this.setParams = () => {
     this.params = {
       ...this.defaults,
-      ...Utils.getUrlParams(document.location.search),
+      ...Utils.urlParamsToObj(document.location.search, urlParamsType),
     };
-    this.calculateSpokeDimensions();
+    this.params.spokeDimensions = this.createTmpSvgGetHeightWidth();
   };
 
-  this.calculateSpokeDimensions = () => {
-    let aSpoke = this.getShape();
-    this.$svg.innerHTML = aSpoke.outerHTML;
-    this.setSpokeDimensions(this.$svg);
-    this.$svg.innerHTML = "";
-  };
-
-  this.setSpokeDimensions = (domObj) => {
-    this.params.spokeDimensions = { width, height } = domObj.getBBox();
-    console.log(this.params.spokeDimensions)
+  this.createTmpSvgGetHeightWidth = () => {
+    this.$svg.innerHTML = this.getShape().outerHTML;
+    return Utils.getSvgHeightWidth(this.$svg);
   };
 
   this.buildWheel = () => {
-    const spokes = getTotalSpokes() + getOverlap();
-    for (let i = 0; i < spokes; i++) {
-      let aSpoke = this.getShape();
-      let animation = this.getAnimation(i);
+    let aSpoke,
+      animation,
+      unrenderedSvg = '';
+    middleOfSpoke = this.params.spokeDimensions.width / 2;
+
+    for (let i = 0; i < this.params.totalSpokes; i++) {
+      aSpoke = this.getShape();
+      animation = this.getAnimation(i);
       aSpoke.appendChild(animation);
-      this.params.unrenderedSvg += this.getSpokeWithRotation(i, this.params.spokeDimensions.width / 2, aSpoke);
+      unrenderedSvg += this.setRotationOnSpoke(i, middleOfSpoke, aSpoke);
     }
+    return unrenderedSvg;
   };
 
   this.getSpokeOpacity = (currentSpoke) => {
-    return this.params.spokeOpacity(currentSpoke);
+    return currentSpoke / this.params.totalSpokes;
   };
 
-  this.getSpokeWithRotation = (spokeNumber, offset = 0, aSpoke) => {
-    return this.params.svgGroup({
+  this.setRotationOnSpoke = (spokeNumber, offset = 0, aSpoke) => {
+    let rotation = this.getRotation(spokeNumber);
+    return this.svgGroup({
       svg: aSpoke.outerHTML,
       offset,
-      rotation: -this.params.spokeRotation() * spokeNumber
+      rotation: rotation
     });
   };
 
-  this.getShape = () => {
-    return Shapes[this.params.shape](this.getShapeParams());
+  this.getRotation = (spokeNumber) => {
+    return spokeNumber * this.spokeArc() * this.setRotationDirection();
   };
 
-  this.getShapeParams = () => {
-    let shapeParam = {
-      fill: this.params.fillColor
-    };
-    if (this.params.transform) {
-      shapeParam.transform = this.params.transform;
-    }
-    return shapeParam;
+  this.setRotationDirection = () => {
+    return this.params.spinClockwise ? -1 : 1;
+  };
+
+  this.spokeArc = () => {
+    return Math.floor(360 / this.params.totalSpokes);
+  };
+
+  this.svgGroup = ({
+    rotation,
+    offset,
+    svg,
+  }) => `<g transform="rotate(${rotation} ${offset} 200)">${svg}</g>`;
+
+  this.getShape = () => {
+    return Shapes[this.params.shape](this.params);
   };
 
   this.getAnimation = (spokeNumber) => {
-    return Animations[this.params.animationName](this.getAnimationOptions(spokeNumber));
+    return Animations[this.params.spokeAnimationName](this.getAnimationOptions(spokeNumber));
   };
 
   this.getAnimationOptions = (spokeNumber) => {
     return {
       opacity: this.getSpokeOpacity(spokeNumber),
-      hiddenSpokes: this.params.hiddenSpokes / getTotalSpokes(),
+      hiddenSpokes: this.params.hiddenSpokes / this.params.totalSpokes * this.params.animationDuration,
       duration: this.params.animationDuration
     };
   };
 
-  this.renderWheel = () => {
-    this.$svg.innerHTML = this.params.unrenderedSvg;
-    this.params.unrenderedSvg = '';
+  this.renderWheel = (unrenderedSvg) => {
+    this.$svg.innerHTML = unrenderedSvg;
   };
 
   this.init();

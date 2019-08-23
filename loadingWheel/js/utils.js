@@ -2,16 +2,24 @@
   let Utils = this[namespace].Utils = {};
 
   // Public
-  Utils.getUrlParams = (search) => {
-    if (search.indexOf('?') === -1) return;
-    let hashes = search.slice(search.indexOf('?') + 1).split('&');
+  Utils.urlParamsToObj = (urlParams, listOfInts) => {
+    if (urlParams.indexOf('?') === -1) return;
+    let hashes = urlParams.slice(urlParams.indexOf('?') + 1).split('&');
     let params = [];
     hashes.map(hash => {
       let [key, val] = hash.split('=');
-      params[key] = decodeURIComponent(val);
+      params[key] = listOfInts.hasOwnProperty(key) ? listOfInts[key](val) : decodeURIComponent(val);
     });
     return params;
   };
+
+
+  Utils.getSvgHeightWidth = (svg) => {
+    return { width, height } = svg.getBBox();
+  };
+
+  Utils.stringToBool = val => val === 'true';
+  Utils.stringToInt = val => Number(val);
 
   // Private
 

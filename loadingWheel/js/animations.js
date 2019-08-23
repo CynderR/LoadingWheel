@@ -1,7 +1,6 @@
 (function(namespace) {
   let Animations = this[namespace].Animations = {};
 
-  let ani = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
   // Public
   Animations.FadeOneSeccond = (options) => {
     let params = {
@@ -10,6 +9,7 @@
       duration: 1,
       ...options
     };
+    let ani = createElementNS('animate');
     ani.setAttribute('dur', params.duration + 's');
     ani.setAttribute('repeatCount', 'indefinite');
     ani.setAttribute('attributeName', 'opacity');
@@ -20,5 +20,10 @@
   };
 
   // Private
+  const createElementNS = (svgType) => {
+    return document.createElementNS('http://www.w3.org/2000/svg', svgType);
+  };
+
+
 
 })(document.currentScript.getAttribute('namespace'));

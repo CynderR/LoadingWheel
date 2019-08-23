@@ -6,6 +6,8 @@
   width: 120px;
   text-align: center;
   margin: 5px;
+  resize: both;
+  overflow: hidden;
 }
 
 .loadingWheel-demo>span {
@@ -13,8 +15,8 @@
 }
 
 .loadingWheel-demo>object {
-  height: 50px;
-  width: 50px;
+  height: 50%;
+  width: 50%;
   position: relative;
   top: 28px;
 }

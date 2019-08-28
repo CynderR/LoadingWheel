@@ -1,4 +1,6 @@
 (function(namespace) {
+  const Utils = LoadingWheel.Utils;
+
   let Shapes = this[namespace].Shapes = {};
 
   // Public
@@ -10,7 +12,7 @@
       ...getShapeParams(options)
     };
     let svg = createElementNS('circle');
-    elementAddAttributsFromObj(svg, params);
+    Utils.elementAddAttributsFromObj(svg, params);
     return svg;
   };
 
@@ -21,7 +23,7 @@
     };
 
     let svg = createElementNS('polygon');
-    elementAddAttributsFromObj(svg, params);
+    Utils.elementAddAttributsFromObj(svg, params);
     return svg;
   };
 
@@ -132,18 +134,8 @@
 
   const path = (params) => {
     let svg = createElementNS('path');
-    elementAddAttributsFromObj(svg, params);
+    Utils.elementAddAttributsFromObj(svg, params);
     return svg;
-  };
-
-  const elementAddAttributsFromObj = (svg, obj) => {
-    for (item in obj) {
-      elementAddAttribute(svg, item, obj[item]);
-    }
-  };
-
-  const elementAddAttribute = (svg, key, value) => {
-    svg.setAttribute(key, value);
   };
 
   const getShapeParams = (options) => {

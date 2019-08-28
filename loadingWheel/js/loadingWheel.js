@@ -1,6 +1,6 @@
 /*
   * Loading Wheel
-  Params: {
+  Prop: {
     svgSpoke: svg graphic to be used as one item in the wheel.
   }
 */
@@ -9,7 +9,7 @@ LoadingWheel.Main = function() {
     Utils = LoadingWheel.Utils,
     Shapes = LoadingWheel.Shapes;
 
-  const urlParamsType = {
+  const urlPropType = {
     totalSpokes: Utils.stringToInt,
     hiddenSpokes: Utils.stringToInt,
     animationDuration: Utils.stringToInt,
@@ -20,15 +20,15 @@ LoadingWheel.Main = function() {
     animationDuration: 1,
     hiddenSpokes: 0,
     totalSpokes: 5,
-    spokeAnimationName: 'FadeOneSeccond',
+    spokeAnimationName: 'Fade',
     spinClockwise: true,
     fillColor: 'green',
-    shape: "circle",
+    shape: 'circle',
   };
 
   this.init = () => {
     this.cacheDomObject();
-    this.setParams();
+    this.setProps();
     let unrenderedSvg = this.buildWheel();
     this.renderWheel(unrenderedSvg);
   };
@@ -37,12 +37,12 @@ LoadingWheel.Main = function() {
     this.$svg = document.getElementById('loadingWheel');
   };
 
-  this.setParams = () => {
-    this.params = {
+  this.setProps = () => {
+    this.props = {
       ...this.defaults,
-      ...Utils.urlParamsToObj(document.location.search, urlParamsType),
+      ...Utils.urlPropsToObj(document.location.search, urlPropType),
     };
-    this.params.spokeDimensions = this.createTmpSvgGetHeightWidth();
+    this.props.spokeDimensions = this.createTmpSvgGetHeightWidth();
   };
 
   this.createTmpSvgGetHeightWidth = () => {
@@ -51,22 +51,36 @@ LoadingWheel.Main = function() {
   };
 
   this.buildWheel = () => {
-    let aSpoke,
-      animation,
-      unrenderedSvg = '';
-    middleOfSpoke = this.params.spokeDimensions.width / 2;
+    let newSpoke,
+      unrenderedSvg = '',
+      $spoke = this.getShape(),
+      spokeWidthCenter = this.props.spokeDimensions.width / 2;
 
-    for (let i = 0; i < this.params.totalSpokes; i++) {
-      aSpoke = this.getShape();
-      animation = this.getAnimation(i);
-      aSpoke.appendChild(animation);
-      unrenderedSvg += this.setRotationOnSpoke(i, middleOfSpoke, aSpoke);
+    for (let i = 0; i < this.props.totalSpokes; i++) {
+      $oneSpoke = Utils.cloneDomNode($spoke);
+      this.applyAnimationsToSpoke(this.getAnimation(i), $oneSpoke);
+      unrenderedSvg += this.setRotationOnSpoke(i, spokeWidthCenter, $oneSpoke);
     }
     return unrenderedSvg;
   };
 
+  this.getShape = () => {
+    return Shapes[this.props.shape](this.props);
+  };
+
+  this.applyAnimationsToSpoke = (animations, $spoke) => {
+    for (animation in animations) {
+      $spoke.appendChild(animations[animation]);
+    }
+  };
+
+  this.getAnimation = (spokeNumber) => {
+    this.props.opacity = this.getSpokeOpacity(spokeNumber);
+    return Animations[this.props.spokeAnimationName](this.props, spokeNumber);
+  };
+
   this.getSpokeOpacity = (currentSpoke) => {
-    return currentSpoke / this.params.totalSpokes;
+    return currentSpoke / this.props.totalSpokes;
   };
 
   this.setRotationOnSpoke = (spokeNumber, offset = 0, aSpoke) => {
@@ -78,38 +92,22 @@ LoadingWheel.Main = function() {
     });
   };
 
-  this.getRotation = (spokeNumber) => {
-    return spokeNumber * this.spokeArc() * this.setRotationDirection();
-  };
-
-  this.setRotationDirection = () => {
-    return this.params.spinClockwise ? -1 : 1;
-  };
-
-  this.spokeArc = () => {
-    return Math.floor(360 / this.params.totalSpokes);
-  };
-
   this.svgGroup = ({
     rotation,
     offset,
     svg,
   }) => `<g transform="rotate(${rotation} ${offset} 200)">${svg}</g>`;
 
-  this.getShape = () => {
-    return Shapes[this.params.shape](this.params);
+  this.getRotation = (spokeNumber) => {
+    return spokeNumber * this.spokeArc() * this.setRotationDirection();
   };
 
-  this.getAnimation = (spokeNumber) => {
-    return Animations[this.params.spokeAnimationName](this.getAnimationOptions(spokeNumber));
+  this.spokeArc = () => {
+    return Math.floor(360 / this.props.totalSpokes);
   };
 
-  this.getAnimationOptions = (spokeNumber) => {
-    return {
-      opacity: this.getSpokeOpacity(spokeNumber),
-      hiddenSpokes: this.params.hiddenSpokes / this.params.totalSpokes * this.params.animationDuration,
-      duration: this.params.animationDuration
-    };
+  this.setRotationDirection = () => {
+    return this.props.spinClockwise ? -1 : 1;
   };
 
   this.renderWheel = (unrenderedSvg) => {

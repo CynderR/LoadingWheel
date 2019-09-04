@@ -1,78 +1,85 @@
 (function(namespace) {
   const Utils = LoadingWheel.Utils;
 
-  let Animations = this[namespace].Animations = {};
+  let Animations = this[namespace].Animations = {
+    // Public
+    getAnimation: (props, spokeNumber) => {
+      return Animations[props.spokeAnimationName](props, spokeNumber);
+    },
 
-  // Public
-  Animations.Fade = (options, spokeNumber) => {
-    let props = {
-      hiddenSpokes: 0,
-      opacity: 1,
-      dur: options.animationDuration,
-      from: 1,
-      to: -(returnEmptyAnimationFrames(options)),
-      attributeName: 'opacity',
-      repeatCount: 'indefinite',
-      begin: -options.opacity || 0
-    };
 
-    let animation = createElementNS('animate');
-    Utils.elementAddAttributsFromObj(animation, props);
-    return [animation];
-  };
+    // Private
+    Fade: (options, spokeNumber) => {
+      let props = {
+        hiddenSpokes: 0,
+        opacity: 1,
+        dur: options.animationDuration,
+        from: 1,
+        to: -(getTimeHidden(options)),
+        attributeName: 'opacity',
+        repeatCount: 'indefinite',
+        begin: -options.offset || 0
+      };
 
-  Animations.Shrink = (options, spokeNumber) => {
-    let props = {
-      attributeName: 'transform',
-      type: 'scale',
-      id: 'shrink' + spokeNumber,
-      from: 1,
-      to: 0,
-      dur: options.animationDuration
-    };
+      let animation = createElementNS('animate');
+      Utils.elementAddAttributsFromObj(animation, props);
+      return [animation];
+    },
 
-    let emptyAnimationFrames = returnEmptyAnimationFrames(options);
-    if (emptyAnimationFrames) {
-      props.begin = -options.opacity + ';empty' + spokeNumber + '.end';
-    } else {
-      props.begin = -options.opacity;
-      props.repeatCount = 'indefinite';
+    Shrink: (options, spokeNumber) => {
+      let timeHidden = getTimeHidden(options);
+      let props = {
+        attributeName: 'transform',
+        type: 'scale',
+        id: 'shrink' + spokeNumber,
+        from: 1,
+        to: 0,
+        dur: options.animationDuration - timeHidden
+      };
+      let result = [];
+      if (timeHidden) {
+        startTime = options.offset - timeHidden;
+        if (options.offset === 0) startTime += 1;
+        let showNothingProps = {
+          ...props,
+          begin: startTime + 's;shrink' + spokeNumber + '.end',
+          dur: timeHidden
+        };
+        result.push(showNothing(showNothingProps, spokeNumber));
+        props.begin = 'empty' + spokeNumber + '.end';
+      } else {
+        props.begin = -options.offset;
+        props.repeatCount = 'indefinite';
+      }
+
+      let animation = createElementNS('animateTransform');
+      result.push(animation);
+      Utils.elementAddAttributsFromObj(animation, props);
+      return result;
+    },
+
+    ShrinkFade: (options, spokeNumber) => {
+      return [
+        Animations.Shrink(options, spokeNumber)[0],
+        Animations.Fade(options, spokeNumber)[0]
+      ];
     }
-
-    let animation = createElementNS('animateTransform');
-    let result = [animation];
-    if (emptyAnimationFrames) {
-      result.push(doNothing(props, spokeNumber, emptyAnimationFrames));
-    }
-    Utils.elementAddAttributsFromObj(animation, props);
-    return result;
   };
 
-  Animations.ShrinkFade = (options, spokeNumber) => {
-    return [
-      Animations.Shrink(options, spokeNumber)[0],
-      Animations.Fade(options, spokeNumber)[0]
-    ];
-  };
-
-  // Private
-
-  const doNothing = (options, spokeNumber, duration) => {
-    let end = options.id;
+  const showNothing = (options, spokeNumber) => {
     let props = {
       ...options,
       id: 'empty' + spokeNumber,
-      dur: duration,
       to: 0,
       from: 0,
-      begin: end + '.end'
     };
+
     let animation = createElementNS('animateTransform');
     Utils.elementAddAttributsFromObj(animation, props);
     return animation;
   };
 
-  const returnEmptyAnimationFrames = (options) => {
+  const getTimeHidden = (options) => {
     return animationEndsAt({
       hiddenSpokes: options.hiddenSpokes,
       totalSpokes: options.totalSpokes,
@@ -81,6 +88,7 @@
   };
 
   const animationEndsAt = (props) => {
+    if (props.hiddenSpokes === 0) return 0;
     return props.hiddenSpokes / props.totalSpokes * props.animationDuration;
   };
 

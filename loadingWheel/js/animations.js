@@ -4,9 +4,12 @@
   let Animations = this[namespace].Animations = {
     // Public
     getAnimation: (props, spokeNumber) => {
-      return Animations[props.spokeAnimationName](props, spokeNumber);
+      let animationObj = [showNothing({
+  id: 'invis' + spokeNumber,
+  dur: props.offset
+})];
+      return animationObj.concat(Animations[props.spokeAnimationName](props, spokeNumber));
     },
-
 
     // Private
     Fade: (options, spokeNumber) => {
@@ -18,7 +21,7 @@
         to: -(getTimeHidden(options)),
         attributeName: 'opacity',
         repeatCount: 'indefinite',
-        begin: -options.offset || 0
+        begin: 'invis' + spokeNumber + '.end'
       };
 
       let animation = createElementNS('animate');
@@ -29,52 +32,43 @@
     Shrink: (options, spokeNumber) => {
       let timeHidden = getTimeHidden(options);
       let props = {
+        id: 'shrink' + spokeNumber,
         attributeName: 'transform',
         type: 'scale',
-        id: 'shrink' + spokeNumber,
+        begin: 'invis' + spokeNumber + '.end;empty' + spokeNumber + '.end',
         from: 1,
         to: 0,
         dur: options.animationDuration - timeHidden
       };
-      let result = [];
-      if (timeHidden) {
-        startTime = options.offset - timeHidden;
-        if (options.offset === 0) startTime += 1;
-        let showNothingProps = {
-          ...props,
-          begin: startTime + 's;shrink' + spokeNumber + '.end',
-          dur: timeHidden
-        };
-        result.push(showNothing(showNothingProps, spokeNumber));
-        props.begin = 'empty' + spokeNumber + '.end';
-      } else {
-        props.begin = -options.offset;
-        props.repeatCount = 'indefinite';
-      }
 
       let animation = createElementNS('animateTransform');
-      result.push(animation);
       Utils.elementAddAttributsFromObj(animation, props);
-      return result;
+      return [
+        animation,
+        showNothing({
+          ...props,
+          id: 'empty' + spokeNumber,
+          begin: 'shrink' + spokeNumber + '.end',
+          dur: timeHidden
+        })
+      ];
     },
 
     ShrinkFade: (options, spokeNumber) => {
-      return [
-        Animations.Shrink(options, spokeNumber)[0],
-        Animations.Fade(options, spokeNumber)[0]
-      ];
+      return Animations.Shrink(options, spokeNumber).concat(Animations.Fade(options, spokeNumber));
     }
   };
 
-  const showNothing = (options, spokeNumber) => {
+  const showNothing = (options) => {
     let props = {
       ...options,
-      id: 'empty' + spokeNumber,
       to: 0,
       from: 0,
+      opacity: 0,
+      attributeName: 'opacity'
     };
 
-    let animation = createElementNS('animateTransform');
+    let animation = createElementNS('animate');
     Utils.elementAddAttributsFromObj(animation, props);
     return animation;
   };
@@ -88,7 +82,7 @@
   };
 
   const animationEndsAt = (props) => {
-    if (props.hiddenSpokes === 0) return 0;
+    if (props.hiddenSpokes === 0) return 0.01;
     return props.hiddenSpokes / props.totalSpokes * props.animationDuration;
   };
 

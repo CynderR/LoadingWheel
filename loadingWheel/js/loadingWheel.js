@@ -58,8 +58,7 @@ LoadingWheel.Main = function() {
 
     for (let i = 0; i < this.props.totalSpokes; i++) {
       $oneSpoke = Utils.cloneDomNode($spoke);
-
-      this.props.offset = Number(this.getSpokeOffset(i));
+      this.props.offset = this.getSpokeOffset(i);
       this.applyAnimationsToSpoke(Animations.getAnimation(this.props, i), $oneSpoke);
       unrenderedSvg += this.setRotationOnSpoke(i, spokeWidthCenter, $oneSpoke);
     }
@@ -77,7 +76,7 @@ LoadingWheel.Main = function() {
   };
 
   this.getSpokeOffset = (currentSpoke) => {
-    return (currentSpoke / this.props.totalSpokes).toFixed(3);
+    return Number((currentSpoke / this.props.totalSpokes).toFixed(3)) || 0.01;
   };
 
   this.setRotationOnSpoke = (spokeNumber, offset = 0, aSpoke) => {
